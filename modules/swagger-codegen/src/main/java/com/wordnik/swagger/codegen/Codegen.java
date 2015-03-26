@@ -1,18 +1,28 @@
 package com.wordnik.swagger.codegen;
 
-import com.wordnik.swagger.codegen.languages.*;
-import com.wordnik.swagger.models.Swagger;
-import com.wordnik.swagger.models.auth.AuthorizationValue;
-import com.wordnik.swagger.util.*;
-
 import io.swagger.parser.SwaggerParser;
 
-import org.apache.commons.cli.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.ServiceLoader;
 
-import java.io.File;
-import java.util.*;
+import org.apache.commons.cli.BasicParser;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.wordnik.swagger.models.Swagger;
 
 public class Codegen extends DefaultGenerator {
+  
+	private final static Logger LOGGER = LoggerFactory.getLogger(Codegen.class);
+	
   static Map<String, CodegenConfig> configs = new HashMap<String, CodegenConfig>();
   static String configString;
   static {
@@ -45,6 +55,7 @@ public class Codegen extends DefaultGenerator {
     options.addOption("t", "template-dir", true, "folder containing the template files");
     options.addOption("d", "debug-info", false, "prints additional info for debugging");
     options.addOption("a", "auth", true, "adds authorization headers when fetching the swagger definitions remotely. Pass in a URL-encoded string of name:header with a comma separating multiple values");
+    options.addOption("s", "spe-lang-args", true, "Specific args for the lang.");
 
     ClientOptInput clientOptInput = new ClientOptInput();
     ClientOpts clientOpts = new ClientOpts();
@@ -56,6 +67,7 @@ public class Codegen extends DefaultGenerator {
       CodegenConfig config = null;
 
       cmd = parser.parse(options, args);
+     
       if (cmd.hasOption("d")) {
         usage(options);
         System.out.println(debugInfoOptions);
@@ -87,6 +99,8 @@ public class Codegen extends DefaultGenerator {
         swagger = new SwaggerParser().read(cmd.getOptionValue("i"), clientOptInput.getAuthorizationValues(), true);
       if (cmd.hasOption("t"))
         clientOpts.getProperties().put("templateDir", String.valueOf(cmd.getOptionValue("t")));
+      if (cmd.hasOption("s"))
+       	  clientOpts.getProperties().put("spe-lang-args", String.valueOf(cmd.getOptionValue("s")));
     }
     catch (Exception e) {
       usage(options);

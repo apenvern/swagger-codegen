@@ -6,7 +6,13 @@ import com.wordnik.swagger.models.properties.*;
 import java.util.*;
 import java.io.File;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class JavaClientCodegen extends DefaultCodegen implements CodegenConfig {
+	
+	private final static Logger LOGGER = LoggerFactory.getLogger(Codegen.class);
+	
   protected String invokerPackage = "io.swagger.client";
   protected String groupId = "io.swagger";
   protected String artifactId = "swagger-client";
@@ -25,14 +31,48 @@ public class JavaClientCodegen extends DefaultCodegen implements CodegenConfig {
     return "Generates a Java client library.";
   }
 
+	public void processOpts() {
+		System.out.println("Call on processOpts ...");
+		if (additionalProperties.containsKey("spe-lang-args")) {
+			String[] javaSpeArgs = ((String) additionalProperties
+					.get("spe-lang-args")).split(";");
+			for (String arg : javaSpeArgs) {
+				if (arg != null && !arg.isEmpty()) {
+					String[] option = arg.split("=");
+					if ("groupId".equals(option[0])) {
+						groupId = option[1];
+						invokerPackage = option[1]+".client";
+					} else if ("artifactId".equals(option[0])) {
+						artifactId = option[1];
+					} else if ("artifactVersion".equals(option[0])) {
+						artifactVersion = option[1];
+					}
+				}
+			}
+		}
+	    System.out.println("Add specific maven conf groupId : "+groupId);
+	    additionalProperties.put("invokerPackage", invokerPackage);
+	    additionalProperties.put("groupId", groupId);
+	    additionalProperties.put("artifactId", artifactId);
+	    additionalProperties.put("artifactVersion", artifactVersion);
+	    apiPackage = invokerPackage+".api";
+	    modelPackage = invokerPackage+".model";
+
+	    supportingFiles.add(new SupportingFile("pom.mustache", "", "pom.xml"));
+	    supportingFiles.add(new SupportingFile("apiInvoker.mustache", 
+	      (sourceFolder + File.separator + invokerPackage).replace(".", java.io.File.separator), "ApiInvoker.java"));
+	    supportingFiles.add(new SupportingFile("JsonUtil.mustache", 
+	      (sourceFolder + File.separator + invokerPackage).replace(".", java.io.File.separator), "JsonUtil.java"));
+	    supportingFiles.add(new SupportingFile("apiException.mustache", 
+	      (sourceFolder + File.separator + invokerPackage).replace(".", java.io.File.separator), "ApiException.java"));
+	}
+  
   public JavaClientCodegen() {
     super();
     outputFolder = "generated-code/java";
     modelTemplateFiles.put("model.mustache", ".java");
     apiTemplateFiles.put("api.mustache", ".java");
     templateDir = "Java";
-    apiPackage = "io.swagger.client.api";
-    modelPackage = "io.swagger.client.model";
 
     reservedWords = new HashSet<String> (
       Arrays.asList(
@@ -44,19 +84,6 @@ public class JavaClientCodegen extends DefaultCodegen implements CodegenConfig {
         "void", "class", "finally", "long", "strictfp", "volatile", "const", "float", 
         "native", "super", "while")
     );
-
-    additionalProperties.put("invokerPackage", invokerPackage);
-    additionalProperties.put("groupId", groupId);
-    additionalProperties.put("artifactId", artifactId);
-    additionalProperties.put("artifactVersion", artifactVersion);
-
-    supportingFiles.add(new SupportingFile("pom.mustache", "", "pom.xml"));
-    supportingFiles.add(new SupportingFile("apiInvoker.mustache", 
-      (sourceFolder + File.separator + invokerPackage).replace(".", java.io.File.separator), "ApiInvoker.java"));
-    supportingFiles.add(new SupportingFile("JsonUtil.mustache", 
-      (sourceFolder + File.separator + invokerPackage).replace(".", java.io.File.separator), "JsonUtil.java"));
-    supportingFiles.add(new SupportingFile("apiException.mustache", 
-      (sourceFolder + File.separator + invokerPackage).replace(".", java.io.File.separator), "ApiException.java"));
 
     languageSpecificPrimitives = new HashSet<String>(
       Arrays.asList(
